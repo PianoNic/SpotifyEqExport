@@ -48,7 +48,7 @@ Types, frequencies and the ±12 dB range come from `Apps/xpui/xpui-modules.js` (
 - **Reads your actual settings**: finds the `prefs` file automatically, no manual copying of slider values.
 - **Real biquads**: evaluates the RBJ transfer function instead of interpolating between six points, which is all Spotify's own UI draws.
 - **All 21 presets built in**: `--preset rock`, `--preset rnb`, and so on, extracted from the client bundle.
-- **Clipping control**: `--scale` to tame the curve, `--rolloff` to fade the low shelf out below 60 Hz.
+- **Clipping control**: `--scale` to tame the curve, `--rolloff` to fade both shelves back to 0 dB below 60 Hz and above 16 kHz.
 - **Verification tool**: `verify_eq.py` reads the coefficients Spotify is using right now and reports gain, Q and S.
 - **Zero dependencies**: Python 3.8+ and nothing else.
 
@@ -84,14 +84,16 @@ Other options:
 ```sh
 python spotify_eq_export.py --preset rock -o Rock.txt   # a built-in preset
 python spotify_eq_export.py --scale 0.5                 # halve the curve
-python spotify_eq_export.py --rolloff                   # fade sub-bass out
+python spotify_eq_export.py --rolloff                   # fade shelf extremes out
 python spotify_eq_export.py --prefs /path/to/prefs      # explicit prefs file
 python spotify_eq_export.py --selftest
 ```
 
 ### A note on clipping
 
-Wavelet normalises on import to keep perceived loudness constant. It does not pull the peak down to 0 dB. Applied system-wide to already-limited material, a large low-shelf boost will clip. A shelf is also flat below its corner frequency, so a `+12 dB` shelf at 60 Hz means `+12 dB` at 20 Hz too, where there is nothing to hear and plenty of driver excursion to lose. That is what `--scale 0.5` and `--rolloff` are for.
+Wavelet normalises on import to keep perceived loudness constant. It does not pull the peak down to 0 dB. Applied system-wide to already-limited material, a boosted shelf will clip.
+
+A shelf is flat beyond its corner frequency, in both directions. A `+12 dB` shelf at 60 Hz still gives `+12 dB` at 20 Hz, and a `+12 dB` shelf at 15 kHz still gives `+12 dB` at 20 kHz. Both ends cost full headroom while contributing almost nothing you can hear, and the low end also drives speaker excursion. `--rolloff` fades them back to 0 dB and leaves everything between 60 Hz and 16 kHz untouched, `--scale` shrinks the whole curve.
 
 ## Verifying the parameters
 

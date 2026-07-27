@@ -96,16 +96,29 @@ def response_db(c, f):
                                (a0 + a1 * z + a2 * z * z)))
 
 
-def curve(gains, scale=1.0, subbass_rolloff=False):
-    """Summed response of all six bands at Wavelet's 127 frequencies."""
+ROLLOFF_LOW = (25.0, 60.0)      # zero below 25 Hz, full at 60 Hz
+ROLLOFF_HIGH = (16000.0, 20000.0)   # full up to 16 kHz, zero at 20 kHz
+
+
+def curve(gains, scale=1.0, rolloff=False):
+    """Summed response of all six bands at Wavelet's 127 frequencies.
+
+    A shelf is flat beyond its corner frequency, so a boosted shelf keeps
+    its full gain out to 20 Hz and 20 kHz where it only costs headroom.
+    rolloff fades both ends back to 0 dB.
+    """
     filters = [biquad(k, f, g * scale) for (k, f, _), g in zip(BANDS, gains)]
     out = [sum(response_db(c, f) for c in filters) for f in FREQ]
-    if subbass_rolloff:
-        lo, hi = 25.0, BANDS[0][1]
+    if rolloff:
+        lo0, lo1 = ROLLOFF_LOW
+        hi0, hi1 = ROLLOFF_HIGH
         for i, f in enumerate(FREQ):
-            if f < hi:
-                t = max(0.0, math.log10(max(f, lo) / lo) / math.log10(hi / lo))
-                out[i] *= t
+            if f < lo1:
+                t = math.log10(max(f, lo0) / lo0) / math.log10(lo1 / lo0)
+                out[i] *= max(0.0, t)
+            elif f > hi0:
+                t = math.log10(min(f, hi1) / hi0) / math.log10(hi1 / hi0)
+                out[i] *= max(0.0, 1.0 - t)
     return out
 
 
@@ -132,8 +145,8 @@ def read_prefs(path=None):
     return gains
 
 
-def graphic_eq(gains, scale=1.0, subbass_rolloff=False):
-    vals = curve(gains, scale, subbass_rolloff)
+def graphic_eq(gains, scale=1.0, rolloff=False):
+    vals = curve(gains, scale, rolloff)
     return "GraphicEQ: " + "; ".join(f"{f} {g:.1f}" for f, g in zip(FREQ, vals))
 
 
@@ -156,7 +169,7 @@ def main():
     ap.add_argument("--preset", choices=sorted(PRESETS),
                     help="use a built-in Spotify preset instead of prefs")
     ap.add_argument("--rolloff", action="store_true",
-                    help="fade the low shelf out below 60 Hz")
+                    help="fade both shelves out below 60 Hz and above 16 kHz")
     ap.add_argument("--samplerate", type=int, default=FS)
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
