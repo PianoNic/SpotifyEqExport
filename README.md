@@ -41,7 +41,7 @@ Spotify uses a six-band chain of [RBJ Audio EQ Cookbook](https://webaudio.github
 
 Gains are stored as `int32` scaled by `12 / INT32_MAX`, so `2147483647` is `+12 dB`.
 
-Types, frequencies and the +/-12 dB range come from `Apps/xpui/xpui-modules.js` (module `51332`). The scaling constant sits in `Spotify.dll` as a double at RVA `0x1a28048`, loaded by the prefs reader at `.text` RVA `0x1085340`. Q and S were recovered from the live filter coefficients, see [Verifying the parameters](#verifying-the-parameters).
+Types, frequencies and the ±12 dB range come from `Apps/xpui/xpui-modules.js` (module `51332`). The scaling constant sits in `Spotify.dll` as a double at RVA `0x1a28048`, loaded by the prefs reader at `.text` RVA `0x1085340`. Q and S were recovered from the live filter coefficients, see [Verifying the parameters](#verifying-the-parameters).
 
 ## Features
 
